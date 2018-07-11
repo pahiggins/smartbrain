@@ -34,8 +34,28 @@ class App extends Component {
             imageUrl: '',
             box: {},
             route: 'signin',
-            isSignedIn: false
+            isSignedIn: false,
+            user: {
+                id: '',
+                name: '',
+                email: '',
+                entries: 0,
+                createdAt: ''
+            }
         }
+    }
+    loadUser = user => {
+        const { id, name, email, entries, createdAt } = user;
+
+        this.setState({
+            user: {
+                id,
+                name,
+                email,
+                entries,
+                createdAt
+            }
+        });
     }
     onInputChange = (event) => {
         this.setState({
@@ -47,7 +67,26 @@ class App extends Component {
             imageUrl: this.state.input
         });
         app.models.predict(Clarifai.FACE_DETECT_MODEL, this.state.input)
-            .then(res => this.displayFaceBox(this.calculateFaceLocation(res)))
+            .then(res => {
+                if (res) {
+                    fetch('http://localhost:3000/image', {
+                        method: 'put',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: this.state.user.id
+                        })
+                    })
+                        .then(res => {
+                            res.json();
+                        })
+                        .then(count => {
+                            this.setState(Object.assign(this.state.user, { entries: count }));
+                        })
+                }
+                this.displayFaceBox(this.calculateFaceLocation(res))
+            })
             .catch(err => console.log(err));
     }
     calculateFaceLocation = (data) => {
@@ -63,7 +102,6 @@ class App extends Component {
         }
     }
     displayFaceBox = (box) => {
-        console.log(box);
         this.setState({ box });
     }
     onRouteChange = (route) => {
@@ -88,7 +126,7 @@ class App extends Component {
                     ?
                         <div>
                             <Logo />
-                            <Rank />
+                            <Rank name={this.state.user.name} entries={this.state.user.entries} />
                             <ImageLinkForm
                                 onInputChange={this.onInputChange}
                                 onButtonSubmit={this.onButtonSubmit}
@@ -98,8 +136,8 @@ class App extends Component {
                     :
                         (
                             route === 'signin'
-                                ? <SignIn onRouteChange={this.onRouteChange} />
-                                : <Register onRouteChange={this.onRouteChange} />
+                                ? <SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
+                                : <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
                         )
                 }
             </div>
