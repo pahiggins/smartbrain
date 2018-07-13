@@ -34,6 +34,8 @@ class SignIn extends Component {
                 if (user.id) {
                     this.props.loadUser(user);
                     this.props.onRouteChange('home');
+                } else {
+                    console.log('Whoops');
                 }
             });
     }
