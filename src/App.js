@@ -24,7 +24,7 @@ const particlesOptions = {
 const initialState = {
     input: '',
     imageUrl: '',
-    box: {},
+    boxes: [],
     route: 'signin',
     isSignedIn: false,
     user: {
@@ -63,7 +63,7 @@ class App extends Component {
         this.setState({
             imageUrl: this.state.input
         });
-        fetch('https://smartbrain-api-pah.herokuapp.com/imageurl', {
+        fetch('http://localhost:3000/imageurl', {
             method: 'post',
             headers: {
                 'Content-Type': 'application/json'
@@ -75,7 +75,7 @@ class App extends Component {
             .then(res => res.json())
             .then(res => {
                 if (res) {
-                    fetch('https://smartbrain-api-pah.herokuapp.com/image', {
+                    fetch('http://localhost:3000/image', {
                         method: 'put',
                         headers: {
                             'Content-Type': 'application/json'
@@ -92,24 +92,26 @@ class App extends Component {
                         })
                         .catch(err => console.log(err));
                 }
-                this.displayFaceBox(this.calculateFaceLocation(res));
+                this.displayFaceBoxes(this.calculateFaceLocations(res));
             })
             .catch(err => console.log(err));
     }
-    calculateFaceLocation = (data) => {
-        const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    calculateFaceLocations = (data) => {
         const image = document.getElementById('input-image');
         const width = Number(image.width);
         const height = Number(image.height);
-        return {
-            leftCol: clarifaiFace.left_col * width,
-            topRow: clarifaiFace.top_row * height,
-            rightCol: width - (clarifaiFace.right_col * width),
-            bottomRow: height - (clarifaiFace.bottom_row * height)
-        }
+        return data.outputs[0].data.regions.map(face => {
+            const clarifaiFace = face.region_info.bounding_box;
+            return {
+                leftCol: clarifaiFace.left_col * width,
+                topRow: clarifaiFace.top_row * height,
+                rightCol: width - (clarifaiFace.right_col * width),
+                bottomRow: height - (clarifaiFace.bottom_row * height)
+            };
+        });
     }
-    displayFaceBox = (box) => {
-        this.setState({ box });
+    displayFaceBoxes = (boxes) => {
+        this.setState({ boxes });
     }
     onRouteChange = (route) => {
         if (route === 'signout') {
@@ -120,7 +122,7 @@ class App extends Component {
         this.setState({ route });
     }
     render() {
-        const { isSignedIn, box, imageUrl, route } = this.state;
+        const { isSignedIn, boxes, imageUrl, route } = this.state;
 
         return (
             <div className="App">
@@ -138,7 +140,7 @@ class App extends Component {
                                 onInputChange={this.onInputChange}
                                 onButtonSubmit={this.onButtonSubmit}
                             />
-                            <FaceRecognition box={box} imageUrl={imageUrl} />
+                            <FaceRecognition boxes={boxes} imageUrl={imageUrl} />
                         </div>
                     :
                         (
