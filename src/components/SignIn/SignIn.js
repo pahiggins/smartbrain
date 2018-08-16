@@ -19,7 +19,7 @@ class SignIn extends Component {
         });
     }
     onSubmitSignIn = () => {
-        fetch('https://smartbrain-api-pah.herokuapp.com/signin', {
+        fetch('http://localhost:3000/signin', {
             method: 'post',
             headers: {
                 'Content-Type': 'application/json'
